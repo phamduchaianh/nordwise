@@ -1,26 +1,32 @@
 // js/app.js
-import { fetchGeoJson } from "./api.js";
+import { fetchGeoJson, fetchPopulation, fetchRent } from "./api.js";
 import { initMap, renderMap } from "./map.js";
 
 const map = initMap("map");
-console.log("Fetching map api...");
-const geoJsonData = await fetchGeoJson();
 
+console.log("Fetching all APIs...");
+const [geoJsonData, rentObj, popObj] = await Promise.all([
+    fetchGeoJson(),
+    fetchRent(),
+    fetchPopulation()
+]);
+
+// data binds
+geoJsonData.features.forEach(feature => {
+    const kuntaCode = feature.properties.kunta;
+    feature.properties.rent = rentObj[kuntaCode] ? `${rentObj[kuntaCode]} €/m²` : 'N/A';
+    feature.properties.population = popObj[kuntaCode] ? popObj[kuntaCode].toLocaleString('fi-FI') : 'N/A';
+});
+
+// sidebar
 const handleRegionClick = (props, layer) => {
     const infoPanel = document.getElementById('info-panel');
     const cityName = props.nimi || props.name || 'Unknown';
-    const svName = props.namn || 'N/A';
-    const kuntaCode = props.kunta;
-
-    console.log(`Clicked on municipality: ${cityName} (Code: ${kuntaCode})`);
-
-    // info placeholder
     infoPanel.innerHTML = `
-        <h3 style="margin-bottom: 8px; color: #1a365d;">${cityName} (${svName})</h3>
-        <p><strong>Municipality Code:</strong> ${kuntaCode}</p>
-        <p><strong>Region ID:</strong> ${props.maakunta || 'N/A'}</p>
-        <hr style="margin: 12px 0; border: 0; border-top: 1px solid #eee;">
-        <p style="color: #666; font-size: 0.9rem;">Sẵn sàng nạp dữ liệu thống kê, giá nhà, thu nhập vào đây ngày mai!</p>
+        <h3>${cityName}</h3>
+        <p><strong>Kunta code:</strong> ${props.kunta}</p>
+        <p><strong>Population:</strong> ${props.population} people</p>
+        <p><strong>Average Rent Price:</strong> ${props.rent}</p>
     `;
 };
 
