@@ -1,26 +1,267 @@
-#map {
-    height: 60vh;
+:root {
+    font-family: Inter, "Segoe UI", sans-serif;
+    color: #263445;
+    background: #f7f9fb;
+
+    --page-bg: #f7f9fb;
+    --panel-bg: #ffffff;
+    --text-muted: #7b8794;
+    --border: #e4e9ef;
+    --accent: #5b8def;
+    --radius: 10px;
 }
 
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+    background: var(--page-bg);
+}
+
+h1, h2, h3, p {
+    margin-top: 0;
+}
+
+/* Header */
+
+.site-header {
+    height: 64px;
+    padding: 0 5%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+}
+
+.logo {
+    color: #263445;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+    text-decoration: none;
+}
+
+/* Main layout */
+
+.dashboard {
+    width: min(1440px, 100%);
+    margin: 0 auto;
+    padding: 38px 5% 24px;
+}
+
+.page-intro {
+    margin-bottom: 28px;
+}
+
+.eyebrow {
+    margin-bottom: 10px;
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+}
+
+.page-intro h1 {
+    margin-bottom: 10px;
+    font-size: clamp(26px, 3vw, 34px);
+    font-weight: 600;
+    letter-spacing: -1px;
+}
+
+.intro-text,
+.panel-heading p,
+.section-heading p,
+.chart-panel > p {
+    margin-bottom: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* Map and municipality information */
+
+.explorer {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(250px, 0.8fr);
+    align-items: stretch;
+    gap: 18px;
+}
+
+.map-panel,
+.info-panel,
 .chart-panel {
-    padding: 1.25rem;
-    margin-top: 1rem;
-    border-radius: 12px;
-    background: var(--panel-bg, #ffffff);
     min-width: 0;
+    padding: 20px;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
 }
 
-.chart-panel h2 {
-    margin: 0 0 0.5rem;
+.panel-heading {
+    margin-bottom: 16px;
 }
 
-.chart-panel p {
-    margin: 0 0 1rem;
-    color: #777;
-    font-size: 0.9rem;
+.panel-heading h2,
+.section-heading h2 {
+    margin-bottom: 6px;
+    font-size: 17px;
+    font-weight: 600;
 }
 
-#rent-chart {
+#map {
+    width: 100%;
+    height: 480px;
+    border-radius: 6px;
+    background: #edf2f6;
+    z-index: 0;
+}
+
+.leaflet-container {
+    font-family: inherit;
+}
+
+/* Information panel */
+
+.info-panel {
+    min-height: 100%;
+    padding: 24px;
+}
+
+.info-panel h3 {
+    margin-bottom: 18px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.info-panel p {
+    margin-bottom: 12px;
+    color: #637181;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.info-panel strong {
+    color: #263445;
+}
+
+.placeholder-text {
+    color: var(--text-muted) !important;
+    line-height: 1.7;
+}
+
+/* Charts */
+
+.charts-section {
+    margin-top: 38px;
+}
+
+.section-heading {
+    margin-bottom: 18px;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.chart-panel h3 {
+    margin-bottom: 6px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.chart-panel > p {
+    margin-bottom: 20px;
+    font-size: 12px;
+}
+
+#rent-chart,
+#rent-history-chart {
     width: 100%;
     min-width: 0;
+}
+
+.chart-panel svg {
+    max-width: 100%;
+}
+
+.chart-panel .graph-stats-container {
+    margin-top: 12px;
+}
+
+/* Footer */
+
+.site-footer {
+    margin-top: 28px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+/* Responsive layout */
+
+@media (max-width: 850px) {
+    .dashboard {
+        padding-right: 24px;
+        padding-left: 24px;
+    }
+
+    .explorer {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .info-panel {
+        min-height: 140px;
+    }
+
+    #map {
+        height: 400px;
+    }
+
+    .charts-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .site-header {
+        height: 58px;
+        padding: 0 18px;
+    }
+
+    .logo {
+        font-size: 19px;
+    }
+
+    .header-label {
+        font-size: 11px;
+    }
+
+    .dashboard {
+        padding: 28px 14px 20px;
+    }
+
+    .page-intro {
+        margin-bottom: 22px;
+    }
+
+    .map-panel,
+    .info-panel,
+    .chart-panel {
+        padding: 15px;
+    }
+
+    #map {
+        height: 340px;
+    }
+
+    .charts-section {
+        margin-top: 28px;
+    }
 }
