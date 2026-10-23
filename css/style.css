@@ -1,3 +1,26 @@
 #map {
-    height: 97vh;
+    height: 60vh;
+}
+
+.chart-panel {
+    padding: 1.25rem;
+    margin-top: 1rem;
+    border-radius: 12px;
+    background: var(--panel-bg, #ffffff);
+    min-width: 0;
+}
+
+.chart-panel h2 {
+    margin: 0 0 0.5rem;
+}
+
+.chart-panel p {
+    margin: 0 0 1rem;
+    color: #777;
+    font-size: 0.9rem;
+}
+
+#rent-chart {
+    width: 100%;
+    min-width: 0;
 }

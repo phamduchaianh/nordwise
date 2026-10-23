@@ -3,5 +3,4 @@ export function parseRentData (data){
         console.warn("Data is empty");      //error handling
         return new Map();
     };
-    
 }

@@ -16,15 +16,30 @@
                 <h1>Nordwise</h1>
                 <p>Where should I live in Finland?</p>
             </header>
+
+        </aside>
+        
+        <main class="map-container">
+            <section class="chart-panel">
+                <h2>Rent comparison</h2>
+                <p>Average monthly rent per square metre</p>
+                <div id="rent-chart"></div>
+            </section>
+            
+            <section class="chart-panel">
+                <h2>Rent history</h2>
+                <p>Average rent per square metre (€ / m²)</p>
+                <div id="rent-history-chart"></div>
+            </section>
+
             <div id="info-panel" class="info-panel">
                 <p class="placeholder-text">Click anywhere!</p>
             </div>
-        </aside>
-
-        <main class="map-container">
             <div id="map"></div>
         </main>
+
     </div>
+    <script src="https://unpkg.com/frappe-charts@1.6.1/dist/frappe-charts.min.umd.js"></script>
     <script type="module" src="js/app.js"></script>
 </body>
 </html>

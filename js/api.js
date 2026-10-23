@@ -4,7 +4,7 @@ const POPULATION_API = "https://pxdata.stat.fi/PxWeb/api/v1/en/StatFin/vaerak/11
 
 const RENT_API = "https://pxdata.stat.fi/PxWeb/api/v1/en/StatFin/asvu/15fa.px";
 
-//fetch geo json
+//===============GEO JSON DATA FOR MAP=================
 export async function fetchGeoJson() {
     try {
         const response = await fetch(GEO_JSON_API);
@@ -15,13 +15,8 @@ export async function fetchGeoJson() {
         throw error;
     }
 }
-//log data
-fetchGeoJson().then((data) => {
-    console.log("Features:", data.features.length);
-    console.log("First municipality:", data.features[0].properties);
-  }).catch(console.error);
 
-
+//===============POPULATION=====================
 export async function fetchPopulation() {
     const queryPayload = {
         "query": [
@@ -51,42 +46,34 @@ export async function fetchPopulation() {
             "format": "json-stat2"
         }
     };
-
     try {
         const response = await fetch(POPULATION_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(queryPayload)
         });
-
         if (!response.ok) {
             const errText = await response.text();
             throw new Error(`Population API Error ${response.status}: ${errText}`);
         }
-
         const pxData = await response.json();
-
         // object convert
         const areaCodes = pxData.dimension.alue_23_20260101.category.index;
         const values = pxData.value;
-
         const popObj = {};
         Object.entries(areaCodes).forEach(([codeWithKU, index]) => {
             // seperate KU -> code
             const kuntaCode = codeWithKU.replace('KU', '').padStart(3, '0');
             popObj[kuntaCode] = values[index] !== null ? values[index] : null;
         });
-
         console.log("Population API loaded successfully!", popObj);
         return popObj;
-
     } catch (error) {
         console.error("Failed to fetch population data:", error);
         return {};
     }
 }
-
-
+//======================CURRENT RENT DATA=======================
 export async function fetchRent() {
     const queryPayload = {
         "query": [
@@ -113,51 +100,127 @@ export async function fetchRent() {
         ],
         "response": { "format": "json-stat2" }
     };
-
     try {
         const response = await fetch(RENT_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(queryPayload)
         });
-
         if (!response.ok) {
             const errText = await response.text();
             throw new Error(`Rent API Error ${response.status}: ${errText}`);
         }
-
         const pxData = await response.json();
-
         const areaCodes = pxData.dimension.alue_44_20260101.category.index;
         const values = pxData.value;
-
         const rentObj = {};
-
         Object.entries(areaCodes).forEach(([rawCode, index]) => {
             const rentVal = values[index];
+            // only use direct municipality codes.
+            // do not treat sub-area values as municipality averages.
+            if (!/^\d{3}$/.test(rawCode)) return;
 
-            // Bỏ qua nếu không có dữ liệu
             if (rentVal === null || rentVal === undefined) return;
 
-            // 1. Tách lấy 3 chữ số đầu tiên (VD: "091_1" -> "091", "398" -> "398")
-            const cleanCode = rawCode.split('_')[0];
-
-            // 2. Chỉ lấy các mã là mã Kunta (chứa toàn số 3 chữ số, bỏ qua các mã tỉnh như MK01, pks, SSS)
-            if (/^\d+$/.test(cleanCode)) {
-                const kuntaCode = cleanCode.padStart(3, '0');
-
-                // Nếu chưa có mã này hoặc gặp mã chính của thành phố thì lưu giá trị
-                if (!rentObj[kuntaCode] || !rawCode.includes('_')) {
-                    rentObj[kuntaCode] = rentVal;
-                }
-            }
+            rentObj[rawCode] = Number(rentVal);
         });
-
         console.log("Parsed Rent Data Object:", rentObj);
         return rentObj;
-
     } catch (error) {
         console.error("Failed to fetch rent data:", error);
         return {};
     }
+}
+//=======================RENT HISTORY DATA=========================
+export async function fetchRentHistory(municipalityCode) {
+    const code = String(municipalityCode).padStart(3, "0");
+    const queryPayload = {
+        query: [
+            {
+                code: "alue_44_20260101",
+                selection: {
+                    filter: "item",
+                    values: [code]
+                }
+            },
+            {
+                code: "rahoitus_2_20260101",
+                selection: {
+                    filter: "item",
+                    values: ["SSS"] // Total funding types
+                }
+            },
+            {
+                code: "huoneluku_5_20260101",
+                selection: {
+                    filter: "item",
+                    values: ["SSS"] // All room types
+                }
+            },
+            {
+                code: "timeperiod_q",
+                selection: {
+                    filter: "all",
+                    values: ["*"]
+                }
+            },
+            {
+                code: "contentscode",
+                selection: {
+                    filter: "item",
+                    values: ["asvu_keskineliovuokra"]
+                }
+            }
+        ],
+        response: {
+            format: "json-stat2"
+        }
+    };
+    try {
+        const response = await fetch(RENT_API, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(queryPayload)
+});
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(
+                `Rent history API error ${response.status}: ${errorText}`
+            );
+        }
+        const pxData = await response.json();
+        const quarters = Object.entries(
+            pxData.dimension.timeperiod_q.category.index
+        ).sort((a, b) => a[1] - b[1]);
+        const history = quarters.map(([quarter, quarterIndex]) => {
+            const coordinates = pxData.id.map((dimensionId) => {
+                const dimension = pxData.dimension[dimensionId];
+                if (dimensionId === "timeperiod_q") {
+                    return quarterIndex;
+                }
+                return Object.values(dimension.category.index)[0];
+            });
+            let valueIndex = 0;
+            coordinates.forEach((coordinate, i) => {
+                const multiplier = pxData.size
+                    .slice(i + 1)
+                    .reduce((product, size) => product * size, 1);
+
+                valueIndex += coordinate * multiplier;
+            });
+            const rawValue = pxData.value[valueIndex];
+            return {
+                quarter,
+                rent: rawValue == null ? null : Number(rawValue)
+            };
+        });
+        console.log("Rent History Data:", history);
+        return history;
+
+    } catch (error) {
+        console.error("Failed to fetch rent history data:", error);
+        return {};
+    } 
 }
