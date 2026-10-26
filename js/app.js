@@ -173,9 +173,18 @@ document.getElementById("apply-btn").addEventListener("click", () => {
 });
 
 // draw the charts again when the window size changes
+let lastViewportWidth = document.documentElement.clientWidth;
 let resizeTimer = null;
+
 window.addEventListener("resize", () => {
+    const currentWidth = document.documentElement.clientWidth;
+
+    // Ignore height-only changes caused by mobile browser UI.
+    if (currentWidth === lastViewportWidth) return;
+
+    lastViewportWidth = currentWidth;
     clearTimeout(resizeTimer);
+
     resizeTimer = setTimeout(() => {
         drawCompare();
         redrawHistoryChart();
