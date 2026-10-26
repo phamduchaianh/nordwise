@@ -4,11 +4,13 @@ const POPULATION_API = "https://pxdata.stat.fi/PxWeb/api/v1/en/StatFin/vaerak/11
 
 const RENT_API = "https://pxdata.stat.fi/PxWeb/api/v1/en/StatFin/asvu/15fa.px";
 
+const EMPLOYMENT_API = "https://pxdata.stat.fi/PxWeb/api/v1/en/StatFin/tyokay/115x.px";
+
 //===============GEO JSON DATA FOR MAP=================
 export async function fetchGeoJson() {
     try {
         const response = await fetch(GEO_JSON_API);
-        if (!response.ok) throw new Error('HTTP error! status: ${response.status}');    //error handling
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);    //error handling (fixed: backticks)
         return await response.json();   //return feature collection
     } catch(error){
         console.error("Geo Json API failed:", error);
@@ -31,7 +33,7 @@ export async function fetchPopulation() {
                 "code": "contentscode",
                 "selection": {
                     "filter": "item",
-                    "values": ["vaerak-vaesto"] // Population 31 Dec
+                    "values": ["vaerak-vaesto"] // population 31 Dec
                 }
             },
             {
@@ -61,8 +63,8 @@ export async function fetchPopulation() {
         const areaCodes = pxData.dimension.alue_23_20260101.category.index;
         const values = pxData.value;
         const popObj = {};
+        // convert KU code
         Object.entries(areaCodes).forEach(([codeWithKU, index]) => {
-            // seperate KU -> code
             const kuntaCode = codeWithKU.replace('KU', '').padStart(3, '0');
             popObj[kuntaCode] = values[index] !== null ? values[index] : null;
         });
@@ -131,6 +133,77 @@ export async function fetchRent() {
         return {};
     }
 }
+
+//======================EMPLOYMENT RATE (NEW)=======================
+export async function fetchEmployment() {
+    const queryPayload = {
+        query: [
+            {
+                code: "alue_23_20250101",
+                selection: {
+                    filter: "all",
+                    values: ["*"]
+                }
+            },
+            {
+                code: "timeperiod_y",
+                selection: {
+                    filter: "item",
+                    values: ["2024"]
+                }
+            },
+            {
+                code: "contentscode",
+                selection: {
+                    filter: "item",
+                    values: ["tyokay-tyollisyysaste"]
+                }
+            }
+        ],
+        response: {
+            format: "json-stat2"
+        }
+    };
+    try {
+        const response = await fetch(EMPLOYMENT_API, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(queryPayload)
+        });
+
+        if (!response.ok) {
+            throw new Error(
+                `Employment API error: ${response.status} - ${await response.text()}`
+            );
+        }
+
+        const pxData = await response.json();
+        const areaCodes = pxData.dimension["alue_23_20250101"].category.index;
+        const empObj = {};
+
+        Object.entries(areaCodes).forEach(([rawCode, index]) => {
+            const code = rawCode.replace(/^KU/, "");
+
+            if (!/^\d{3}$/.test(code)) return;
+
+            const value = pxData.value[index];
+
+            if (value === null || value === undefined) return;
+
+            empObj[code] = Number(value);
+        });
+
+        console.log("Employment rate data:", empObj);
+
+        return empObj;
+    } catch (error) {
+        console.error("Failed to fetch employment data:", error);
+        return {};
+    }
+}
+
 //=======================RENT HISTORY DATA=========================
 export async function fetchRentHistory(municipalityCode) {
     const code = String(municipalityCode).padStart(3, "0");
@@ -147,14 +220,14 @@ export async function fetchRentHistory(municipalityCode) {
                 code: "rahoitus_2_20260101",
                 selection: {
                     filter: "item",
-                    values: ["SSS"] // Total funding types
+                    values: ["SSS"] // total funding types
                 }
             },
             {
                 code: "huoneluku_5_20260101",
                 selection: {
                     filter: "item",
-                    values: ["SSS"] // All room types
+                    values: ["SSS"] // all room types
                 }
             },
             {
@@ -183,7 +256,7 @@ export async function fetchRentHistory(municipalityCode) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(queryPayload)
-});
+        });
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(
@@ -218,9 +291,8 @@ export async function fetchRentHistory(municipalityCode) {
         });
         console.log("Rent History Data:", history);
         return history;
-
     } catch (error) {
         console.error("Failed to fetch rent history data:", error);
-        return {};
-    } 
+        return [];  // fixed: empty list, not {}
+    }
 }

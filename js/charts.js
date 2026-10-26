@@ -1,49 +1,58 @@
+import { datasets } from "./data.js";
+
 let rentChart = null;
 
-export function renderRentChart(features) {
+// compare chart: key = dataset, order = "low" or "high", count = how many bars
+export function renderCompareChart(features, key, order, count) {
     const chartElement = document.getElementById("rent-chart");
     // error handling
     if (!chartElement) {
         console.error("Missing #rent-chart container");
         return;
     }
-    // keep only municipalities with valid rent data.
-    const rentData = features
+
+    const dataset = datasets[key];
+
+    // keep only municipalities with valid data.
+    const list = features
         .map((feature) => {
             const props = feature.properties;
+            const code = String(props.kunta).padStart(3, "0");
 
             return {
-                code: props.kunta,
-                name: props.nimi || props.name || props.kunta,
-                rent: props.rentValue
+                code: code,
+                name: props.nimi || props.name || code,
+                value: dataset.values[code]
             };
         })
-        .filter((item) =>
-            /^\d{3}$/.test(String(item.code)) &&
-            Number.isFinite(item.rent)
-        );
+        .filter((item) => Number.isFinite(item.value));
 
-    // show the 10 municipalities with the lowest rent.
-    rentData.sort((a, b) => a.rent - b.rent);
-    const topTen = rentData.slice(0, 10);
+    // sort and take the first ones
+    list.sort((a, b) => order === "low" ? a.value - b.value : b.value - a.value);
+    const shown = list.slice(0, count);
 
-    if (topTen.length === 0) {
-        chartElement.textContent =
-            "No municipality-level rent data available.";
+    if (rentChart) {
+        rentChart.destroy();
+        rentChart = null;
+    }
+    chartElement.innerHTML = "";
+
+    if (shown.length === 0) {
+        chartElement.textContent = "No data available for this dataset.";
         return;
     }
 
     const chartData = {
-        labels: topTen.map((item) => item.name),
+        labels: shown.map((item) => item.name),
         datasets: [
             {
-                name: "Average rent (€/m²)",
-                values: topTen.map((item) => item.rent)
+                name: dataset.label,
+                values: shown.map((item) => item.value)
             }
         ]
     };
     const options = {
-        title: "10 Lowest-Rent Municipalities",
+        title: `${count} ${order === "low" ? "lowest" : "highest"} - ${dataset.label}`,
         data: chartData,
         type: "bar",
         height: 320,
@@ -54,20 +63,43 @@ export function renderRentChart(features) {
             spaceRatio: 0.4
         },
         tooltipOptions: {
-            formatTooltipY: (value) => `${value.toFixed(2)} €/m²`
+            formatTooltipY: (value) => `${value.toFixed(2)} ${dataset.unit}`
         }
     };
-    if (rentChart) {
-        rentChart.destroy();
-    }
-    chartElement.innerHTML = "";
     rentChart = new frappe.Chart(chartElement, options);
+}
+
+// download the compare chart as svg
+export function exportCompareChart() {
+    if (rentChart) {
+        rentChart.export();
+    }
 }
 
 
 let rentHistoryChart = null;
+let lastHistory = null;
+let lastCity = "";
+let historyType = "line";   // "line" or "bar"
 
 export function renderRentHistoryChart(history, cityName) {
+    lastHistory = history;
+    lastCity = cityName;
+    drawHistoryChart();
+}
+
+// line / bar button
+export function setHistoryType(type) {
+    historyType = type;
+    drawHistoryChart();
+}
+
+// draw again (used when the window size changes)
+export function redrawHistoryChart() {
+    drawHistoryChart();
+}
+
+function drawHistoryChart() {
     const container = document.getElementById("rent-history-chart");
 
     if (!container) {
@@ -75,12 +107,15 @@ export function renderRentHistoryChart(history, cityName) {
         return;
     }
 
+    // nothing selected yet
+    if (!lastHistory) return;
+
     // Ignore quarters without rent data.
-    const validHistory = history.filter(
+    const validHistory = lastHistory.filter(
         item => item.rent !== null && Number.isFinite(item.rent)
     );
 
-    // Clear the previous chart before drawing a new one.
+    // clear the previous chart before drawing a new one.
     container.innerHTML = "";
     rentHistoryChart = null;
 
@@ -93,7 +128,7 @@ export function renderRentHistoryChart(history, cityName) {
     const values = validHistory.map(item => item.rent);
 
     rentHistoryChart = new frappe.Chart("#rent-history-chart", {
-        title: `Rent history — ${cityName}`,
+        title: `Rent history — ${lastCity}`,
         data: {
             labels,
             datasets: [
@@ -103,7 +138,7 @@ export function renderRentHistoryChart(history, cityName) {
                 }
             ]
         },
-        type: "line",
+        type: historyType,
         height: 280,
         colors: ["#4F8EF7"],
         axisOptions: {
@@ -119,4 +154,11 @@ export function renderRentHistoryChart(history, cityName) {
             formatTooltipY: value => `${value} €/m²`
         }
     });
+}
+
+// download the history chart as svg
+export function exportHistoryChart() {
+    if (rentHistoryChart) {
+        rentHistoryChart.export();
+    }
 }

@@ -22,15 +22,42 @@
             <p class="eyebrow">EXPLORE FINLAND</p>
             <h1>Where should I live?</h1>
             <p class="intro-text">
-                Explore population and rental prices across Finnish municipalities.
+                Explore population, rental prices and employment across Finnish municipalities.
             </p>
+        </section>
+
+        <section class="data-section">
+            <h2>Data</h2>
+            <p>
+                Drag a data button onto the map or onto the comparison chart.
+                On a phone tap a button.
+            </p>
+            <div id="data-tray"></div>
+
+            <h3>Make your own data</h3>
+            <p>Pick two datasets and a calculation. The result becomes a new data chip.</p>
+            <div class="builder">
+                <select id="a-select"></select>
+                <select id="op-select">
+                    <option value="+">+</option>
+                    <option value="-">−</option>
+                    <option value="*">×</option>
+                    <option value="/">÷</option>
+                </select>
+                <select id="b-select"></select>
+                <button id="apply-btn">Create</button>
+            </div>
         </section>
 
         <section class="explorer">
             <div class="map-panel">
                 <div class="panel-heading">
                     <h2>Municipalities</h2>
-                    <p>Select an area on the map.</p>
+                    <p>Select an area on the map. Use the list to change the map layer.</p>
+                    <div class="controls">
+                        <select id="layer-select"></select>
+                        <button id="reset-btn">Reset zoom</button>
+                    </div>
                 </div>
                 <div id="map"></div>
             </div>
@@ -45,21 +72,40 @@
         <section class="charts-section">
             <div class="section-heading">
                 <div>
-                    <h2>Rental market</h2>
-                    <p>Compare prices and explore how rents change over time.</p>
+                    <h2>Charts</h2>
+                    <p>Compare municipalities and explore how rents change over time.</p>
                 </div>
             </div>
 
             <div class="charts-grid">
-                <article class="chart-panel">
-                    <h3>Rent comparison</h3>
-                    <p>Average monthly rent per square metre</p>
+                <article class="chart-panel" id="compare-panel">
+                    <h3>Comparison</h3>
+                    <p>Compare municipalities. Drag a data chip here to change the data.</p>
+                    <div class="controls">
+                        <select id="compare-select"></select>
+                        <select id="order-select">
+                            <option value="low">Lowest</option>
+                            <option value="high">Highest</option>
+                        </select>
+                        <select id="count-select">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                        </select>
+                        <button id="download-compare">Download SVG</button>
+                    </div>
                     <div id="rent-chart"></div>
                 </article>
 
                 <article class="chart-panel">
                     <h3>Rent history</h3>
                     <p>Quarterly rent for the selected municipality</p>
+                    <div class="controls">
+                        <button id="line-btn">Line</button>
+                        <button id="bar-btn">Bar</button>
+                        <button id="download-history">Download SVG</button>
+                    </div>
                     <div id="rent-history-chart"></div>
                 </article>
             </div>
