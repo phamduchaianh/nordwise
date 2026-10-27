@@ -1,3 +1,0 @@
-API 1 — Municipality boundaries -> map 
-API 2 — Rent statistics -> Rent price
-API 3 — Population statistics -> comparison
